@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Iravath Admin</title>
+  <link rel="icon" type="image/png" href="img/favicon.png">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="admin">
+  <!-- Login -->
+  <section class="login" id="login" hidden>
+    <form class="login-card" id="login-form" novalidate>
+      <img src="img/logo-mark.png" alt="" class="login-mark">
+      <img src="img/logo-word.png" alt="Iravath" class="login-word">
+      <h1>Admin</h1>
+      <label class="field">Email<input id="l-email" type="email" autocomplete="username" required></label>
+      <label class="field">Password<input id="l-pass" type="password" autocomplete="current-password" required></label>
+      <p class="err" id="l-err"></p>
+      <button class="btn gold block" type="submit">Log in</button>
+      <p class="small demo-hint" id="demo-hint" hidden>Demo mode (no server): use <b>admin@iravath.in</b> / <b>iravath-admin</b>. Changes are saved in this browser only.</p>
+    </form>
+  </section>
+
+  <!-- App -->
+  <div id="shell" hidden>
+    <header class="a-top">
+      <a href="admin.html" class="a-brand"><img src="img/logo-mark.png" alt=""><span>Iravath <em>Admin</em></span></a>
+      <nav class="a-tabs" role="tablist">
+        <button data-tab="products" class="on" role="tab">Products</button>
+        <button data-tab="offers" role="tab">Offers</button>
+      </nav>
+      <div class="a-right"><a class="link small" href="index.html" target="_blank" rel="noopener">View store ↗</a><button class="btn ghost sm" id="logout">Log out</button></div>
+    </header>
+    <div class="demo-banner" id="demo-banner" hidden>Demo mode: no server connected. Changes are saved in this browser only, and the store link opened in this browser shows them.</div>
+    <main class="a-main" id="view"></main>
+  </div>
+
+  <div class="a-drawer-backdrop" id="ed-backdrop"></div>
+  <aside class="a-drawer" id="editor" aria-label="Editor"></aside>
+
+  <div class="toast" id="toast" role="status"></div>
+  <div class="busy" id="busy" hidden role="status"><div class="brand-loader lg"><i class="mark"></i></div><p id="busy-text">Please wait…</p></div>
+
+  <script src="js/demo-data.js"></script>
+  <script src="js/demo-store.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>
