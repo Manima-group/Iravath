@@ -12,7 +12,7 @@ from .routers import accounts, admin, admin_orders, catalog, checkout, wishlist
 from .seed import seed
 
 log = logging.getLogger("uvicorn.error")
-FRONTEND_DIR = Path(__file__).resolve().parents[2] / "frontend"
+ADMIN_DIR = Path(__file__).resolve().parents[2] / "admin"  # admin panel static files
 
 
 @asynccontextmanager
@@ -69,5 +69,5 @@ async def no_cache_admin_html(request, call_next):
     return response
 
 
-if settings.serve_admin_static and FRONTEND_DIR.exists():  # admin panel (admin.html) + its assets
-    app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="admin")
+if settings.serve_admin_static and ADMIN_DIR.exists():  # admin panel (admin.html) + its assets
+    app.mount("/", StaticFiles(directory=ADMIN_DIR, html=True), name="admin")

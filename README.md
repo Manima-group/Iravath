@@ -4,8 +4,8 @@ Premium menswear store: Next.js storefront (SEO), FastAPI backend, admin panel, 
 
 ```
 storefront/  Next.js 16 storefront (App Router, ISR, SEO)          -> http://localhost:3000
-backend/     FastAPI API + admin panel (frontend/admin.html)       -> http://localhost:8000/admin.html
-frontend/    Admin panel static files (served by the backend)
+backend/     FastAPI API                                          -> http://localhost:8000/api/...
+admin/       Admin panel (static HTML/JS, served by the backend)  -> http://localhost:8000/admin.html
 ```
 
 ## Run locally
@@ -95,7 +95,7 @@ Open **http://localhost:8000/admin.html** and log in with `ADMIN_EMAIL` / `ADMIN
 - **Dashboard tiles:** live/hidden products, low stock, paid orders, revenue.
 - Deleting a product that has past orders hides it instead, so order history stays intact.
 
-Production notes: product photos live on local disk, so on Render/ECS mount a persistent volume at `MEDIA_DIR` (or swap `services/images.py` to upload to S3/Supabase Storage). The admin is a single account protected by a signed 12-hour token; add staff users/roles when more people need access.
+Production notes: product photos live on local disk (`backend/media/`, not committed to Git), so on Render/ECS mount a persistent volume at `MEDIA_DIR` (or swap `services/images.py` to upload to S3/Supabase Storage). The admin is a single account protected by a signed 12-hour token; add staff users/roles when more people need access.
 
 ## Business rules (backend/app/config.py, overridable in .env)
 
