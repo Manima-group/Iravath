@@ -124,7 +124,7 @@ def seed(export_json: Path | None = None) -> None:
     finally:
         db.close()
 
-    if export_json:  # used to build the frontend's offline demo catalog
+    if export_json:  # used to build the admin panel's offline demo catalog (admin/js/demo-data.js)
         data = {
             "categories": [{"slug": s, "name": n, "blurb": b} for s, n, b in CATEGORIES],
             "products": [
