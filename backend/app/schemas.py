@@ -139,6 +139,14 @@ class OrderItemOut(BaseModel):
     quantity: int
 
 
+class EventOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    kind: str
+    message: str
+    actor: str = "system"
+    created_at: datetime
+
+
 class OrderOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     number: str
@@ -155,6 +163,12 @@ class OrderOut(BaseModel):
     coupon: str
     razorpay_payment_id: str
     items: list[OrderItemOut]
+    created_at: datetime | None = None
+    fulfilment_status: str = "unfulfilled"
+    awb_code: str = ""
+    courier_name: str = ""
+    tracking_url: str = ""
+    timeline: list["EventOut"] = []
 
 
 # ---------- admin ----------
@@ -246,3 +260,113 @@ class CouponOut(CouponIn):
 class OfferOut(BaseModel):
     code: str
     description: str
+
+
+# ---------- customer accounts ----------
+class OtpRequestIn(BaseModel):
+    email: str = Field(max_length=120)
+
+    @field_validator("email")
+    @classmethod
+    def _email(cls, v: str) -> str:
+        v = v.strip().lower()
+        if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", v):
+            raise ValueError("Enter a valid email")
+        return v
+
+
+class OtpVerifyIn(OtpRequestIn):
+    code: str = Field(pattern=r"^\s*\d{6}\s*$")
+
+
+class CustomerOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    email: str
+    name: str
+    phone: str
+    address: dict
+    whatsapp_opt_in: bool
+
+
+class CustomerUpdate(BaseModel):
+    name: str = Field("", max_length=80)
+    phone: str = ""
+    address: Address | None = None
+    whatsapp_opt_in: bool = True
+
+    @field_validator("phone")
+    @classmethod
+    def _phone(cls, v: str) -> str:
+        if not v:
+            return ""
+        digits = re.sub(r"\D", "", v)[-10:]
+        if not re.fullmatch(r"[6-9]\d{9}", digits):
+            raise ValueError("Enter a valid 10-digit Indian mobile number")
+        return digits
+
+
+class LoginOut(BaseModel):
+    token: str
+    expires_at: datetime
+    customer: CustomerOut
+    merged: dict
+    is_new: bool
+
+
+class OrderSummaryOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    number: str
+    status: str
+    fulfilment_status: str
+    payment_method: str
+    total: int
+    created_at: datetime
+    items: list[OrderItemOut]
+
+
+# ---------- admin orders ----------
+class AdminOrderOut(OrderOut):
+    id: int
+    session_id: str = ""
+    customer_id: int | None = None
+    paid_at: datetime | None = None
+    shipped_at: datetime | None = None
+    delivered_at: datetime | None = None
+    shiprocket_order_id: str = ""
+    shiprocket_shipment_id: str = ""
+    shipment_error: str = ""
+    cod_collected: bool = False
+    cod_collected_amount: int = 0
+    cod_remitted: bool = False
+    cod_remittance_utr: str = ""
+    cod_remitted_at: datetime | None = None
+    admin_note: str = ""
+    events: list[EventOut] = []
+    notifications: list[dict] = []
+
+
+class StatusIn(BaseModel):
+    status: Literal["unfulfilled", "processing", "shipped", "out_for_delivery", "delivered", "cancelled", "rto"]
+    note: str = Field("", max_length=300)
+    awb_code: str = Field("", max_length=40)
+    courier_name: str = Field("", max_length=80)
+    tracking_url: str = Field("", max_length=300)
+    notify: bool = True
+
+
+class CodIn(BaseModel):
+    collected: bool | None = None
+    collected_amount: int | None = Field(None, ge=0)
+    remitted: bool | None = None
+    utr: str = Field("", max_length=40)
+    note: str = Field("", max_length=300)
+
+
+class CodBulkIn(BaseModel):
+    order_numbers: list[str] = Field(min_length=1, max_length=500)
+    utr: str = Field(min_length=3, max_length=40)
+
+
+class NoteIn(BaseModel):
+    note: str = Field(min_length=1, max_length=1000)

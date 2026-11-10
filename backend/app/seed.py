@@ -65,7 +65,21 @@ COUPONS = [
 
 # Columns added after the first release. create_all() won't add columns to existing tables,
 # so add them here. (Use Alembic once the schema starts changing often.)
-NEW_COLUMNS = {"products": {"images": "JSON", "is_active": "BOOLEAN DEFAULT TRUE"}}
+NEW_COLUMNS = {
+    "products": {"images": "JSON", "is_active": "BOOLEAN DEFAULT TRUE"},
+    "wishlist_items": {"customer_id": "INTEGER"},
+    "orders": {
+        "customer_id": "INTEGER",
+        "fulfilment_status": "VARCHAR(20) DEFAULT 'unfulfilled'",
+        "shiprocket_order_id": "VARCHAR(30) DEFAULT ''", "shiprocket_shipment_id": "VARCHAR(30) DEFAULT ''",
+        "shipment_error": "VARCHAR(300) DEFAULT ''", "awb_code": "VARCHAR(40) DEFAULT ''",
+        "courier_name": "VARCHAR(80) DEFAULT ''", "tracking_url": "VARCHAR(300) DEFAULT ''",
+        "shipped_at": "TIMESTAMP", "delivered_at": "TIMESTAMP",
+        "cod_collected": "BOOLEAN DEFAULT FALSE", "cod_collected_amount": "INTEGER DEFAULT 0",
+        "cod_remitted": "BOOLEAN DEFAULT FALSE", "cod_remittance_utr": "VARCHAR(40) DEFAULT ''",
+        "cod_remitted_at": "TIMESTAMP", "admin_note": "TEXT DEFAULT ''",
+    },
+}
 
 
 def migrate() -> None:

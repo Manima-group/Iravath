@@ -64,3 +64,14 @@ def offers(db: Session = Depends(get_db)):
     """Live offers flagged for the storefront announcement bar."""
     rows = db.query(Coupon).filter(Coupon.show_in_banner.is_(True)).order_by(Coupon.id).all()
     return [OfferOut(code=c.code, description=c.description) for c in rows if coupon_is_live(c)]
+
+
+@router.get("/sitemap-data")
+def sitemap_data(db: Session = Depends(get_db)):
+    """Everything the storefront's sitemap.xml needs in one call."""
+    products = db.query(Product).filter(Product.is_active.is_(True)).all()
+    return {
+        "products": [{"slug": p.slug, "updated_at": p.created_at.isoformat() if p.created_at else None,
+                      "image": (p.images or [None])[0]} for p in products],
+        "categories": [c.slug for c in db.query(Category).all()],
+    }

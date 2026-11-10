@@ -132,6 +132,12 @@
   }
 
   let api = remote;
+  // Shared helpers for js/admin-orders.js
+  window.IrvAdmin = {
+    req: (...a) => remote.req(...a), isDemo: () => api === demo, token: () => token,
+    toast, busy, ask, loader, esc, inr, imgUrl, $, $$,
+    openEditor: (h) => openEditor(h), closeEditor: () => closeEditor(), refresh: () => route(),
+  };
   let categories = [];
 
   // ---------------- auth ----------------
@@ -159,11 +165,14 @@
   // ---------------- tabs ----------------
   $$(".a-tabs button").forEach((b) => (b.onclick = () => { location.hash = b.dataset.tab; }));
   window.addEventListener("hashchange", route);
+  const TABS = ["orders", "cod", "products", "offers"];
   function route() {
-    const tab = location.hash.slice(1) === "offers" ? "offers" : "products";
+    const want = location.hash.slice(1);
+    const tab = TABS.includes(want) ? want : "orders";
     $$(".a-tabs button").forEach((b) => b.classList.toggle("on", b.dataset.tab === tab));
     closeEditor();
-    (tab === "offers" ? viewOffers : viewProducts)();
+    const views = { products: viewProducts, offers: viewOffers, ...(window.IrvAdminViews || {}) };
+    Promise.resolve(views[tab]()).catch((e) => { $("#view").innerHTML = `<div class="empty-a"><h3>Couldn't load</h3><p class="small">${esc(e.message)}</p></div>`; });
   }
 
   // ---------------- products ----------------
@@ -452,7 +461,11 @@
 
   // ---------------- boot ----------------
   (async function boot() {
-    try { const r = await fetch(API_BASE + "/api/health"); if (!r.ok) throw 0; await r.json(); }
+    try {
+      const r = await fetch(API_BASE + "/api/health"); if (!r.ok) throw 0;
+      const h = await r.json();
+      $("#store-link").href = h.store_url || "/";
+    }
     catch { api = demo; $("#demo-hint").hidden = false; $("#demo-banner").hidden = false; }
     if (!token) return showLogin();
     try { await api.me(); await enter(); } catch { showLogin(); }

@@ -1,7 +1,7 @@
 import re
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile
 from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
@@ -11,6 +11,7 @@ from ..schemas import (CategoryIn, CategoryOut, CouponIn, CouponOut, LoginIn, Pr
 from ..services.auth import check_credentials, create_token, require_admin
 from ..services.images import delete_media_file, save_product_image
 from ..services.pricing import coupon_is_live
+from ..services.storefront import revalidate
 
 public = APIRouter(prefix="/api/admin", tags=["admin"])
 router = APIRouter(prefix="/api/admin", tags=["admin"], dependencies=[Depends(require_admin)])
@@ -150,25 +151,31 @@ def admin_product(product_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/products", response_model=ProductOut, status_code=201)
-def create_product(data: ProductIn, db: Session = Depends(get_db)):
+def create_product(data: ProductIn, background: BackgroundTasks, db: Session = Depends(get_db)):
     p = Product(images=[], rating=0, reviews=0)
     _apply(db, p, data)
     db.add(p)
     db.commit()
-    return _load(db, p.id)
+    p = _load(db, p.id)
+    background.add_task(revalidate, ["/", "/shop", f"/shop/{p.category.slug}", f"/product/{p.slug}"])
+    return p
 
 
 @router.put("/products/{product_id}", response_model=ProductOut)
-def update_product(product_id: int, data: ProductIn, db: Session = Depends(get_db)):
+def update_product(product_id: int, data: ProductIn, background: BackgroundTasks, db: Session = Depends(get_db)):
     p = _load(db, product_id)
+    old_slug = p.slug
     _apply(db, p, data)
     db.commit()
-    return _load(db, p.id)
+    p = _load(db, p.id)
+    background.add_task(revalidate, ["/", "/shop", f"/shop/{p.category.slug}", f"/product/{p.slug}", f"/product/{old_slug}"])
+    return p
 
 
 @router.delete("/products/{product_id}")
-def delete_product(product_id: int, db: Session = Depends(get_db)):
+def delete_product(product_id: int, background: BackgroundTasks, db: Session = Depends(get_db)):
     p = _load(db, product_id)
+    background.add_task(revalidate, ["/", "/shop", f"/shop/{p.category.slug}", f"/product/{p.slug}"])
     if db.query(OrderItem).filter(OrderItem.product_id == p.id).first():
         p.is_active = False  # keep order history intact
         db.commit()
@@ -193,7 +200,8 @@ def list_coupons(db: Session = Depends(get_db)):
 
 
 @router.post("/coupons", response_model=CouponOut, status_code=201)
-def create_coupon(data: CouponIn, db: Session = Depends(get_db)):
+def create_coupon(data: CouponIn, background: BackgroundTasks, db: Session = Depends(get_db)):
+    background.add_task(revalidate, ["/"])
     if db.query(Coupon).filter(Coupon.code == data.code).first():
         raise HTTPException(409, f"Coupon {data.code} already exists")
     c = Coupon(**data.model_dump())
@@ -203,7 +211,8 @@ def create_coupon(data: CouponIn, db: Session = Depends(get_db)):
 
 
 @router.put("/coupons/{coupon_id}", response_model=CouponOut)
-def update_coupon(coupon_id: int, data: CouponIn, db: Session = Depends(get_db)):
+def update_coupon(coupon_id: int, data: CouponIn, background: BackgroundTasks, db: Session = Depends(get_db)):
+    background.add_task(revalidate, ["/"])
     c = db.get(Coupon, coupon_id)
     if not c:
         raise HTTPException(404, "Coupon not found")
@@ -217,7 +226,8 @@ def update_coupon(coupon_id: int, data: CouponIn, db: Session = Depends(get_db))
 
 
 @router.delete("/coupons/{coupon_id}")
-def delete_coupon(coupon_id: int, db: Session = Depends(get_db)):
+def delete_coupon(coupon_id: int, background: BackgroundTasks, db: Session = Depends(get_db)):
+    background.add_task(revalidate, ["/"])
     c = db.get(Coupon, coupon_id)
     if c:
         db.delete(c)
